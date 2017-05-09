@@ -94,18 +94,18 @@ public:
         delay(50);
     }
 
-    void update(int pin1, int pin2, int sunLevel) {
+    void update(int pin1, int pin2, String sunLevel) {
 
         val1 = analogRead(pin1);
         val2 = analogRead(pin2);
 
         if((millis() - lastUpdate) > updateInterval) {
             lastUpdate = millis();
-            if (sunLevel == 0) {
+            if (sunLevel == "low") {
                 park_pos();
-            } else if (sunLevel == 1) {
+            } else if (sunLevel == "medium") {
                 hold_pos();
-            } else if (sunLevel == 2) {
+            } else if (sunLevel == "high") {
                 track_sun(val1, val2);
             }
         }
@@ -121,12 +121,8 @@ class LightLevel {
     int highLightCutoff;
 
 public:
-    LightLevel() {
-        lowLightCutoff = 500;
-        highLightCutoff = 600;
-    }
-
     int sensor_avg() {
+        totalSensorAvg = 0;
         for (int i = 0; i < 10; i++) {
             sensorAvg = (analogRead(photoPinLeft) + analogRead(photoPinRight) + analogRead(photoPinTop) + analogRead(photoPinBottom)) / 4;
             totalSensorAvg += sensorAvg;
@@ -136,16 +132,20 @@ public:
         return avgPhotoLevel;
     }
 
-    int get_sun_level() {
+    String get_sun_level() {
+
+        lowLightCutoff = 600;
+        highLightCutoff = 700;
+
         lightLevel = sensor_avg();
-        //return 2; //Remove comment for debug
-        //Serial.println("light level: " + lightLevel);
+        //return "high"; //Remove comment for debug
+        //Serial.println("lightlevel:" + String(lightLevel));
         if (lightLevel <= lowLightCutoff ) {
-            return 0;   // very low light
+            return "low";   // very low light
         } else if (lightLevel > lowLightCutoff && lightLevel < highLightCutoff) {
-            return 1;   // low light
-        } else {
-            return 2;   // lots of light
+            return "medium";   // low light
+        } else if (lightLevel >= highLightCutoff) {
+            return "high";   // lots of light
         }
     }
 
@@ -166,7 +166,7 @@ void setup() {
 }
 
 void loop() {
-    int lightLevel = level.get_sun_level();
+    String lightLevel = level.get_sun_level();
     vSeeker.update(photoPinTop, photoPinBottom, lightLevel);
     hSeeker.update(photoPinLeft, photoPinRight, lightLevel);
 }
